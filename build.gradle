@@ -87,7 +87,7 @@ apply from:   'gradle/build-springactuator.gradle'
 apply from:   'gradle/build-springsleuth.gradle'
 apply from:   'gradle/build-githooks.gradle'
 apply from:   'gradle/build-liberty.gradle'
-apply from:   'gradle/build-pact-provider.gradle'
+apply from:   'gradle/build-pact-consumer.gradle'
 
 repositories {
     mavenCentral()

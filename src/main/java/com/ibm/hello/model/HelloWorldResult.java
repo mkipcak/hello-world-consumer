@@ -1,6 +1,6 @@
 package com.ibm.hello.model;
 
-public class GreetingResponse {
+public class HelloWorldResult {
     private String name;
     private String greeting;
 
@@ -12,21 +12,11 @@ public class GreetingResponse {
         this.name = name;
     }
 
-    public GreetingResponse withName(String name) {
-        this.setName(name);
-        return this;
-    }
-
     public String getGreeting() {
         return greeting;
     }
 
     public void setGreeting(String greeting) {
         this.greeting = greeting;
-    }
-
-    public GreetingResponse withGreeting(String greeting) {
-        this.setGreeting(greeting);
-        return this;
     }
 }
