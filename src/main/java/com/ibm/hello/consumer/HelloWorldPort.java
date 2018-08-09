@@ -46,7 +46,10 @@ public class HelloWorldPort {
                     responseType
             ).getBody();
         } catch (HttpClientErrorException ex) {
-            throw new MissingInputName();
+            if (ex.getRawStatusCode() == 406) {
+                throw new MissingInputName();
+            }
+            throw ex;
         }
     }
 

@@ -83,7 +83,7 @@ public class HelloWorldPortTest {
                 .path("/hello/")
                 .method("GET")
                 .willRespondWith()
-                .status(400)
+                .status(406)
                 .toPact();
     }
 
