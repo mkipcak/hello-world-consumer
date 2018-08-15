@@ -2,6 +2,7 @@ package com.ibm.hello.app;
 
 import java.util.Arrays;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,11 +10,24 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
+import com.ibm.hello.consumer.HelloWorldPort;
+
 @SpringBootApplication
 @ComponentScan({"com.ibm.hello.*"})
 public class Application {
+    @Autowired
+    private HelloWorldPort port;
+
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    public CommandLineRunner helloWorldRunner(ApplicationContext ctx) {
+        return args -> {
+            port.getGreetingGet("Get");
+            port.getGreetingPost("Post");
+        };
     }
 
     //@Bean

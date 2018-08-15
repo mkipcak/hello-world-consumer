@@ -3,12 +3,12 @@ package com.ibm.hello.consumer;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import com.ibm.cloud_garage.rest_template.RestTemplateBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Component;
@@ -32,7 +32,7 @@ public class HelloWorldPort {
 
     @Bean("helloWorldRestTemplate")
     public RestTemplate getRestTemplate() {
-        return new RestTemplate();
+        return new RestTemplateBuilder().build(config);
     }
 
     public HelloWorldResponse getGreetingGet(String inputName) {
