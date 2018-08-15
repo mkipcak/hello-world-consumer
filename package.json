@@ -1,5 +1,5 @@
 {
-  "name": "template-spring-boot",
+  "name": "hello-world-consumer",
   "version": "0.1.0",
   "description": "Spring Boot application",
   "main": "index.js",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.ibm.com:seansund/template-spring-boot.git"
+    "url": "git@github.ibm.com:seansund/hello-world-consumer.git",
   },
   "author": "",
   "license": "ISC",
