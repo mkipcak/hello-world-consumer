@@ -1,6 +1,9 @@
 package com.ibm.hello.model;
 
-public class HelloWorldResult {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class HelloWorldResponse {
     private String name;
     private String greeting;
 

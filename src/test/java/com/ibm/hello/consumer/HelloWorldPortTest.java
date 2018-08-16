@@ -13,15 +13,17 @@ import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
 import au.com.dius.pact.consumer.junit5.PactConsumerTestExt;
 import au.com.dius.pact.consumer.junit5.PactTestFor;
 import au.com.dius.pact.model.RequestResponsePact;
+import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.ibm.hello.config.HelloWorldProviderConfig;
-import com.ibm.hello.model.HelloWorldResult;
+import com.ibm.hello.model.HelloWorldResponse;
 
 @ExtendWith(PactConsumerTestExt.class)
 @PactTestFor(providerName = "HelloWorld_Provider", hostInterface = "localhost", port = "9080")
@@ -29,6 +31,7 @@ import com.ibm.hello.model.HelloWorldResult;
 public class HelloWorldPortTest {
 
     final String inputName = "John";
+    final String greeting = "Greeting";
 
     @NotNull
     private HelloWorldPort buildHelloWorldPort(MockServer mockServer) {
@@ -43,58 +46,152 @@ public class HelloWorldPortTest {
         return port;
     }
 
-    @Pact(provider = "HelloWorld_Provider", consumer = "HelloWorld_Consumer")
-    public RequestResponsePact createInputNameFragment(PactDslWithProvider builder) {
-        Map<String, String> responseHeaders = new HashMap<>();
-        responseHeaders.put("Content-Type", "application/json;charset=UTF-8");
+    @Nested
+    @DisplayName("Given [GET] /hello")
+    public class GivenGetHello {
 
-        return builder
-                .uponReceiving("a request for greeting with name provided")
-                        .path(String.format("/hello/%s", inputName))
-                        .method("GET")
-                        .willRespondWith()
-                        .status(200)
-                        .headers(responseHeaders)
-                        .body(newJsonBody(o -> {
-                            o.stringValue("name", inputName);
-                            o.stringValue("greeting", "Hello there, " + inputName + "!");
-                        }).build())
-                .toPact();
+        @Pact(provider = "HelloWorld_Provider", consumer = "HelloWorld_Consumer")
+        public RequestResponsePact createInputNameFragment(PactDslWithProvider builder) {
+            Map<String, String> responseHeaders = new HashMap<>();
+            responseHeaders.put("Content-Type", "application/json;charset=UTF-8");
+
+            return builder
+                    .uponReceiving("a request for greeting with name provided")
+                    .path("/hello")
+                    .query(String.format("name=%s", inputName))
+                    .method("GET")
+                    .willRespondWith()
+                    .status(200)
+                    .headers(responseHeaders)
+                    .body(newJsonBody(o -> {
+                        o.stringValue("name", inputName);
+                        o.stringValue("greeting", greeting);
+                    }).build())
+                    .toPact();
+        }
+
+        @Test
+        @DisplayName("When `John` provided for input name then return greeting`")
+        @PactTestFor(pactMethod = "createInputNameFragment")
+        public void hello_inputName(MockServer mockServer) {
+            HelloWorldPort port = buildHelloWorldPort(mockServer);
+
+            HelloWorldResponse result = port.getGreetingGet(inputName);
+            assertEquals(inputName, result.getName());
+            assertEquals(greeting, result.getGreeting());
+        }
+
+        @Pact(provider = "HelloWorld_Provider", consumer = "HelloWorld_Consumer")
+        public RequestResponsePact createNoInputFragment(PactDslWithProvider builder) {
+            Map<String, String> responseHeaders = new HashMap<>();
+            responseHeaders.put("Content-Type", "application/json;charset=UTF-8");
+
+            return builder
+                    .uponReceiving("a request for greeting with no name provided")
+                    .path("/hello")
+                    .method("GET")
+                    .willRespondWith()
+                    .status(406)
+                    .toPact();
+        }
+
+        @Test
+        @DisplayName("When no input name is provided then throw exception")
+        @PactTestFor(pactMethod = "createNoInputFragment")
+        public void hello_noInputName(MockServer mockServer) {
+            final HelloWorldPort port = buildHelloWorldPort(mockServer);
+
+            assertThrows(HelloWorldPort.MissingInputName.class, () -> {
+                port.getGreetingGet("");
+            });
+        }
     }
 
-    @Test
-    @DisplayName("When `John` provided for input name then return greeting `Hello there, John!`")
-    @PactTestFor(pactMethod = "createInputNameFragment")
-    public void hello_inputName(MockServer mockServer) {
-        HelloWorldPort port = buildHelloWorldPort(mockServer);
+    @Nested
+    @DisplayName("Given [POST] /hello")
+    public class GivenPostHello {
 
-        HelloWorldResult result = port.getGreeting(inputName);
-        assertEquals(inputName, result.getName());
-        assertEquals("Hello there, " + inputName + "!", result.getGreeting());
-    }
+        @Pact(provider = "HelloWorld_Provider", consumer = "HelloWorld_Consumer")
+        public RequestResponsePact createInputNameFragment(PactDslWithProvider builder) {
+            Map<String, String> responseHeaders = new HashMap<>();
+            responseHeaders.put("Content-Type", "application/json;charset=UTF-8");
 
-    @Pact(provider = "HelloWorld_Provider", consumer = "HelloWorld_Consumer")
-    public RequestResponsePact createNoInputFragment(PactDslWithProvider builder) {
-        Map<String, String> responseHeaders = new HashMap<>();
-        responseHeaders.put("Content-Type", "application/json;charset=UTF-8");
+            return builder
+                    .uponReceiving("a request for greeting with name provided")
+                    .path("/hello")
+                    .method("POST")
+                    .body(String.format("{\"name\": \"%s\"}", inputName), ContentType.APPLICATION_JSON)
+                    .willRespondWith()
+                    .status(200)
+                    .headers(responseHeaders)
+                    .body(newJsonBody(o -> {
+                        o.stringValue("name", inputName);
+                        o.stringValue("greeting", greeting);
+                    }).build())
+                    .toPact();
+        }
 
-        return builder
-                .uponReceiving("a request for greeting with no name provided")
-                .path("/hello/")
-                .method("GET")
-                .willRespondWith()
-                .status(406)
-                .toPact();
-    }
+        @Test
+        @DisplayName("When `John` provided for input name then return greeting")
+        @PactTestFor(pactMethod = "createInputNameFragment")
+        public void hello_inputName(MockServer mockServer) {
+            HelloWorldPort port = buildHelloWorldPort(mockServer);
 
-    @Test
-    @DisplayName("When no input name is provided then throw exception")
-    @PactTestFor(pactMethod = "createNoInputFragment")
-    public void hello_noInputName(MockServer mockServer) {
-        final HelloWorldPort port = buildHelloWorldPort(mockServer);
+            HelloWorldResponse result = port.getGreetingPost(inputName);
+            assertEquals(inputName, result.getName());
+            assertEquals(greeting, result.getGreeting());
+        }
 
-        assertThrows(HelloWorldPort.MissingInputName.class, () -> {
-            port.getGreeting("");
-        });
+        @Pact(provider = "HelloWorld_Provider", consumer = "HelloWorld_Consumer")
+        public RequestResponsePact createNoNameFragment(PactDslWithProvider builder) {
+            Map<String, String> responseHeaders = new HashMap<>();
+            responseHeaders.put("Content-Type", "application/json;charset=UTF-8");
+
+            return builder
+                    .uponReceiving("a request for greeting with no name provided")
+                    .path("/hello")
+                    .method("POST")
+                    .body("{}", ContentType.APPLICATION_JSON)
+                    .willRespondWith()
+                    .status(406)
+                    .toPact();
+        }
+
+        @Pact(provider = "HelloWorld_Provider", consumer = "HelloWorld_Consumer")
+        public RequestResponsePact createEmptyNameFragment(PactDslWithProvider builder) {
+            Map<String, String> responseHeaders = new HashMap<>();
+            responseHeaders.put("Content-Type", "application/json;charset=UTF-8");
+
+            return builder
+                    .uponReceiving("a request for greeting with no name provided")
+                    .path("/hello")
+                    .method("POST")
+                    .body("{\"name\":\"\"}", ContentType.APPLICATION_JSON)
+                    .willRespondWith()
+                    .status(406)
+                    .toPact();
+        }
+
+        @Test
+        @DisplayName("When no input name is provided then throw exception")
+        @PactTestFor(pactMethod = "createNoNameFragment")
+        public void hello_nullInputName(MockServer mockServer) {
+            final HelloWorldPort port = buildHelloWorldPort(mockServer);
+
+            assertThrows(HelloWorldPort.MissingInputName.class, () -> {
+                port.getGreetingPost(null);
+            });
+        }
+
+        @Test
+        @DisplayName("When no input name is provided then throw exception")
+        @PactTestFor(pactMethod = "createEmptyNameFragment")
+        public void hello_emptyInputName(MockServer mockServer) {
+            final HelloWorldPort port = buildHelloWorldPort(mockServer);
+
+            assertThrows(HelloWorldPort.MissingInputName.class, () -> {
+                port.getGreetingPost("");
+            });
+        }
     }
 }
